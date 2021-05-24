@@ -1,0 +1,43 @@
+import json
+import requests
+from requests.exceptions import RequestException
+import re
+import pandas as pd
+import csv
+
+
+def get_one_page(url):
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.text
+        return None
+    except RequestException:
+        return None
+
+def parse_one_page(html):
+    items = re.findall('<li>.*?title.*?>(.*?)</a>(.*?)</li>', html,re.S)
+    for item in items:
+        yield {
+            '新闻标题': item[0],
+            '日期': item[1].strip()
+        }
+
+with open('d:\js-cpa.csv', 'a', encoding='gbk',newline="") as f: 
+    fieldnames = ['新闻标题', '日期']    
+    writer = csv.DictWriter(f, fieldnames=fieldnames)
+    writer.writeheader()
+
+for i in range(34):
+    if (i==0):
+        url='http://www.jicpa.org.cn/pub/cztzx/zxzx/yw/index.html'
+    else:
+        url = 'http://www.jicpa.org.cn/pub/cztzx/zxzx/yw/index_'+str(i)+'.html'
+    html = str(get_one_page(url))
+    for item in parse_one_page(html):
+        print(item)
+        with open('d:\js-cpa.csv', 'a', encoding='gbk',newline="") as f:  # file_path 是 csv 文件存储的路径
+            fieldnames = ['新闻标题', '日期']          # 假设有两列
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writerow(item)
+
